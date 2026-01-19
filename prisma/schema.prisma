@@ -1,0 +1,232 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Category {
+  id        Int       @id @default(autoincrement())
+  name      String
+  shopId    Int?
+  createIp  String    @default("")
+  createdAt DateTime  @default(now())
+  createdBy String    @default("")
+  updateIp  String    @default("")
+  updatedAt DateTime
+  updatedBy String    @default("")
+  isActive  Boolean   @default(true)
+  Shop      Shop?     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  products  Product[]
+
+  @@unique([name, shopId])
+  @@index([shopId], map: "Category_shopId_fkey")
+}
+
+model Order {
+  id         Int         @id @default(autoincrement())
+  shopId     Int
+  total      Float
+  createIp   String      @default("")
+  createdAt  DateTime    @default(now())
+  createdBy  String      @default("")
+  updateIp   String      @default("")
+  updatedAt  DateTime
+  updatedBy  String      @default("")
+  isActive   Boolean     @default(true)
+  Shop       Shop        @relation(fields: [shopId], references: [id])
+  orderItems OrderItem[]
+  payment    Payment?
+
+  @@index([shopId], map: "Order_shopId_fkey")
+}
+
+model OrderItem {
+  id              Int     @id @default(autoincrement())
+  orderId         Int
+  productId       Int
+  productName     String
+  quantity        Int
+  price           Float
+  cost            Float
+  extraPrice      Float
+  totalPrice      Float
+  subServicesJson String?
+  order           Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product         Product @relation(fields: [productId], references: [id])
+
+  @@index([orderId], map: "OrderItem_orderId_fkey")
+  @@index([productId], map: "OrderItem_productId_fkey")
+}
+
+model Payment {
+  id          Int            @id @default(autoincrement())
+  orderId     Int            @unique
+  method      Payment_method
+  amount      Float
+  status      Payment_status @default(PENDING)
+  slipUrl     String?
+  providerRef String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime
+  order       Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+model Product {
+  id         Int          @id @default(autoincrement())
+  name       String
+  basePrice  Float        @default(0)
+  categoryId Int
+  createIp   String       @default("")
+  createdAt  DateTime     @default(now())
+  createdBy  String       @default("")
+  updateIp   String       @default("")
+  updatedAt  DateTime
+  updatedBy  String       @default("")
+  isActive   Boolean      @default(true)
+  image      String?
+  cost       Float        @default(0)
+  orderItems OrderItem[]
+  category   Category     @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  SubService SubService[]
+
+  @@index([categoryId], map: "Product_categoryId_fkey")
+}
+
+model Shop {
+  id          Int        @id @default(autoincrement())
+  name        String
+  address     String?    @db.Text
+  info        String?    @db.Text
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime
+  createIp    String     @default("")
+  createdBy   String     @default("")
+  updateIp    String     @default("")
+  updatedBy   String     @default("")
+  isActive    Boolean    @default(true)
+  promptPayId String?
+  Category    Category[]
+  Order       Order[]
+  User        User[]
+}
+
+model SubService {
+  id         Int      @id @default(autoincrement())
+  name       String
+  extraPrice Float    @default(0)
+  productId  Int
+  createIp   String   @default("")
+  createdAt  DateTime @default(now())
+  createdBy  String   @default("")
+  updateIp   String   @default("")
+  updatedAt  DateTime
+  updatedBy  String   @default("")
+  isActive   Boolean  @default(true)
+  Product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId], map: "SubService_productId_fkey")
+}
+
+model User {
+  id        Int       @id @default(autoincrement())
+  username  String    @unique
+  password  String
+  role      User_role @default(EMPLOYEE)
+  shopId    Int?
+  createIp  String    @default("")
+  createdAt DateTime  @default(now())
+  createdBy String    @default("")
+  updateIp  String    @default("")
+  updatedAt DateTime
+  updatedBy String    @default("")
+  isActive  Boolean   @default(true)
+  Shop      Shop?     @relation(fields: [shopId], references: [id])
+
+  @@index([shopId], map: "User_shopId_fkey")
+}
+
+enum Payment_method {
+  CASH
+  QR_PROMPTPAY
+  TRANSFER
+}
+
+enum User_role {
+  OWNER
+  EMPLOYEE
+  ADMIN
+}
+
+enum Payment_status {
+  PENDING
+  PAID
+  FAILED
+}
+
+// --- New Thai Stock Tracker Models ---
+
+model StockUser {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  createdAt DateTime @default(now())
+  alerts    StockAlert[]
+  follows   StockFollow[]
+  @@map("thai_stock_user")
+}
+
+model StockItem {
+  id         Int      @id @default(autoincrement())
+  symbol     String   @unique
+  name       String?
+  lastPrice  Float?
+  lastUpdate DateTime @default(now())
+  alerts     StockAlert[]
+  history    StockHistory[]
+  follows    StockFollow[]
+  @@map("thai_stock_item")
+}
+
+model StockAlert {
+  id          Int      @id @default(autoincrement())
+  targetPrice Float
+  condition   String   // "GT" (Greater Than) or "LT" (Less Than)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  
+  user        StockUser     @relation(fields: [userId], references: [id])
+  userId      Int
+
+  stock       StockItem    @relation(fields: [stockId], references: [id])
+  stockId     Int
+  @@map("thai_stock_alert")
+}
+
+model StockHistory {
+  id        Int       @id @default(autoincrement())
+  date      DateTime  @default(now())
+  open      Float?
+  close     Float?
+  high      Float?
+  low       Float?
+  
+  stock       StockItem    @relation(fields: [stockId], references: [id])
+  stockId     Int
+  @@map("thai_stock_history")
+}
+
+model StockFollow {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+
+  user        StockUser     @relation(fields: [userId], references: [id])
+  userId      Int
+
+  stock       StockItem    @relation(fields: [stockId], references: [id])
+  stockId     Int
+
+  @@unique([userId, stockId])
+  @@map("thai_stock_follow")
+}
