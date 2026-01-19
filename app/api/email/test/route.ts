@@ -44,7 +44,7 @@ export async function POST(req: Request) {
                     <p style="color: #bfdbfe; margin: 5px 0 0;">Daily Summary</p>
                 </div>
                 <div style="padding: 20px;">
-                    <p style="color: #374151; margin-bottom: 20px;">Here is the latest summary of your followed stocks as of <strong>${new Date().toLocaleString()}</strong>:</p>
+                    <p style="color: #374151; margin-bottom: 20px;">Here is the latest summary of your followed stocks as of <strong>${new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' })}</strong>:</p>
                     <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
                         <thead>
                             <tr style="background-color: #f9fafb; text-align: left;">

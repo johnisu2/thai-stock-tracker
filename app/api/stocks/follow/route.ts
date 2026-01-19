@@ -45,8 +45,9 @@ export async function GET(req: NextRequest) {
         }));
 
         return NextResponse.json(followsWithDetails);
-    } catch (error) {
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    } catch (error: any) {
+        console.error('[FOLLOW GET ERROR]', error);
+        return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
     }
 }
 
@@ -97,10 +98,11 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json(follow, { status: 201 });
     } catch (error: any) {
+        console.error('[FOLLOW ERROR]', error);
         if (error.code === 'P2002') { // Unique constraint violation
             return NextResponse.json({ message: 'Already following' }, { status: 200 });
         }
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+        return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
     }
 }
 
