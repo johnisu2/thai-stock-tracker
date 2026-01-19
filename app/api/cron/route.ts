@@ -57,6 +57,12 @@ function isMarketOpen() {
 }
 
 export async function GET(req: NextRequest) {
+    // Check for Vercel Cron Secret
+    const authHeader = req.headers.get('authorization');
+    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+        return new Response('Unauthorized', { status: 401 });
+    }
+
     try {
         const { searchParams } = new URL(req.url);
         const type = searchParams.get('type') || 'hourly'; // Default to hourly
