@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { popularThaiStocks } from '../lib/thaiStocks';
+import MarketInsights from './MarketInsights';
 
 // Default user email as requested
 const DEFAULT_USER_EMAIL = 'jpraipiboonyakit@gmail.com';
@@ -83,6 +84,21 @@ export default function StockTracker() {
         alert(data.message || data.error);
     };
 
+    const handleSyncHistory = async () => {
+        if (!confirm('ต้องการดึงข้อมูลหุ้นย้อนหลัง 7 วันเพื่อเปิดใช้งาน Dashboard หรือไม่? (อาจใช้เวลาสักครู่)')) return;
+        setLoading(true);
+        try {
+            const res = await fetch('/api/stocks/history/seed', { method: 'POST' });
+            const data = await res.json();
+            alert(`✅ ${data.message}: บันทึกข้อมูลได้ ${data.recordsCreated} รายการ`);
+            window.location.reload(); // Refresh to see real data
+        } catch (e) {
+            alert('❌ เกิดข้อผิดพลาดในการดึงข้อมูล');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleFollow = async () => {
         if (!stockData) return;
         try {
@@ -140,12 +156,21 @@ export default function StockTracker() {
                         </h2>
                         <p className="mt-2 text-gray-500 dark:text-gray-400 font-medium">ติดตามราคาหุ้นแบบ Real-time และตั้งค่าแจ้งเตือน</p>
                     </div>
-                    <button
-                        onClick={handleTestEmail}
-                        className="px-6 py-3 bg-white/50 dark:bg-white/5 hover:bg-white/80 dark:hover:bg-white/10 border border-gray-200 dark:border-white/10 rounded-2xl text-sm font-semibold text-blue-600 dark:text-blue-400 transition-all flex items-center gap-2 shadow-sm"
-                    >
-                        <span>✉️</span> ส่งสรุปหุ้นทางอีเมล
-                    </button>
+                    <div className="flex flex-wrap gap-3">
+                        <button
+                            onClick={handleSyncHistory}
+                            disabled={loading}
+                            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 border border-blue-500 rounded-2xl text-sm font-semibold text-white transition-all flex items-center gap-2 shadow-lg shadow-blue-500/20 disabled:opacity-50"
+                        >
+                            <span>🔄</span> ดึงข้อมูลย้อนหลัง (Sync)
+                        </button>
+                        <button
+                            onClick={handleTestEmail}
+                            className="px-6 py-3 bg-white/50 dark:bg-white/5 hover:bg-white/80 dark:hover:bg-white/10 border border-gray-200 dark:border-white/10 rounded-2xl text-sm font-semibold text-blue-600 dark:text-blue-400 transition-all flex items-center gap-2 shadow-sm"
+                        >
+                            <span>✉️</span> ส่งสรุปหุ้นทางอีเมล
+                        </button>
+                    </div>
                 </div>
 
                 {/* Search & Detail Section */}
@@ -259,6 +284,9 @@ export default function StockTracker() {
                 </div>
             </div>
 
+            {/* Market Insights Section */}
+            <MarketInsights />
+
             {/* Watchlist Section */}
             <div className="glass p-8 rounded-3xl shadow-xl overflow-hidden relative">
                 <div className="flex items-center gap-3 mb-8">
@@ -306,8 +334,8 @@ export default function StockTracker() {
                                                 {item.alert ? (
                                                     <div className="flex items-center">
                                                         <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border shadow-sm transition-all hover:scale-105 ${item.alert.condition === 'GT'
-                                                                ? 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-500/30'
-                                                                : 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-500/30'
+                                                            ? 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-500/30'
+                                                            : 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-500/30'
                                                             }`}>
                                                             <span className="text-sm">🔔</span>
                                                             <span className="opacity-70">{item.alert.condition === 'GT' ? '≥' : '≤'}</span>
